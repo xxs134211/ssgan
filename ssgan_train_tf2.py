@@ -5,6 +5,9 @@ from tensorflow import keras
 import ssgan_dataset_tf2
 from ssgan_model_tf2 import Generator, Discriminator
 import matplotlib.pyplot as plt
+import warnings
+
+warnings.filterwarnings("ignore")
 
 
 # 准备与真实数据的标签相乘的二进制标签掩码
@@ -68,9 +71,6 @@ def accuracy(discriminator, batch_x, extended_label, is_training):
     return acc, prediction_value
 
 
-# d_losses, g_losses = [], []
-
-
 def Draw(hist, show=False, save=False):
     plt.figure()
     plt.plot(hist['G_losses'], 'b', label='generator')
@@ -96,6 +96,7 @@ def main():
     is_training = True
     epochs = 100
     labeled_rate = 0.2
+    epoch_accuracy = 0.0
 
     train_hist = {'D_losses': [], 'G_losses': []}
 
@@ -110,6 +111,7 @@ def main():
     no_of_batches = int(ssgan_dataset_tf2.train_X.shape[0] / batch_size) + 1
     for epoch in range(epochs):
         train_accuracies, train_D_losses, train_G_losses = [], [], []
+        acc = epoch_accuracy
         for i in range(no_of_batches - 1):
             # 准备训练数据
             batch_x = ssgan_dataset_tf2.train_X[i * batch_size:batch_size + i * batch_size, ]
@@ -152,6 +154,20 @@ def main():
 
         print('After epoch: ' + str(epoch + 1) + ' Generator loss: '
               + str(tr_GL) + ' Discriminator loss: ' + str(tr_DL) + ' Accuracy: ' + str(tr_acc))
+        # 准备测试数据
+        test_data = ssgan_dataset_tf2.test_X
+        test_label = ssgan_dataset_tf2.test_Y
+        test_data_reshaped = test_data.reshape([-1, 32, 32, 1])
+        test_extended_label = prepare_extended_label(test_label)
+        test_accuracy, _ = accuracy(discriminator, test_data_reshaped, test_extended_label, False)
+        print(test_accuracy.numpy())
+        epoch_accuracy = test_accuracy.numpy()
+        if epoch_accuracy > acc:
+            print('识别率最大为' + str(epoch_accuracy))
+
+    discriminator.save_weights('Gan_model/model')
+    del discriminator
+
     return train_hist
 
 

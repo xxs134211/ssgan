@@ -3,7 +3,7 @@ import numpy as np
 import os
 from sklearn import preprocessing  # 0-1编码
 from sklearn.model_selection import StratifiedShuffleSplit  # 随机划分，保证每一类比例相同
-
+import tensorflow as tf
 import warnings
 
 warnings.filterwarnings("ignore")
@@ -178,7 +178,7 @@ train_X1, train_Y1, valid_X1, valid_Y1, test_X1, test_Y1 = DataSet(d_path=path_t
                                                                    number=4000,
                                                                    normal=False,
                                                                    rate=[0.7, 0.2, 0.1],
-                                                                   enc=False,
+                                                                   enc=True,
                                                                    enc_step=50)
 # print(train_X1, train_Y1)
 # print(test_X1.shape, test_Y1.shape)
@@ -187,7 +187,7 @@ train_X2, train_Y2, valid_X2, valid_Y2, test_X2, test_Y2 = DataSet(d_path=path_t
                                                                    length=1024,
                                                                    number=400,
                                                                    normal=False,
-                                                                   rate=[0.4, 0.1, 0.5],
+                                                                   rate=[0.3, 0.1, 0.6],
                                                                    enc=False,
                                                                    enc_step=50)
 
@@ -197,3 +197,4 @@ print("验证样本=" + str(valid_X.shape[0]))
 print("测试样本=" + str(test_X.shape[0]))
 print("**********数据处理完毕***************")
 print("**********开始建立模型***************")
+# print(tf.argmax(test_Y, 1))
