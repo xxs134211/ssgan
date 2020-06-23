@@ -16,7 +16,7 @@ def get_labeled_mask(labeled_rate, batch_size):
     return labeled_mask
 
 
-# ########### 扩展标签，加入第n+1类标签 ############
+# ########### 扩展标签，加入第n+1类标签，三类轴承数据 ############
 def prepare_extended_label(label):
     # add extra label for fake data
     extended_label = tf.concat([tf.zeros([tf.shape(label)[0], 1]), label], axis=1)
