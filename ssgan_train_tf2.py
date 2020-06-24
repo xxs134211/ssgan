@@ -71,18 +71,27 @@ def accuracy(discriminator, batch_x, extended_label, is_training):
     return acc, prediction_value
 
 
-def Draw(hist, show=False, save=False):
+def Draw(hist, show=False, save=False, is_loss=True):
     plt.figure()
-    plt.plot(hist['G_losses'], 'b', label='generator')
-    plt.plot(hist['D_losses'], 'r', label='discriminator')
-    plt.xlabel('Epoch')
-    plt.ylabel('Loss')
-    plt.legend()
-    if save:
-        if not os.path.exists('Loss'):
-            os.mkdir('Loss')
-        plt.savefig("Loss/loss.png")
-
+    if is_loss:
+        plt.plot(hist['G_losses'], 'b', label='generator')
+        plt.plot(hist['D_losses'], 'r', label='discriminator')
+        plt.xlabel('Epoch')
+        plt.ylabel('Loss')
+        plt.legend()
+        if save:
+            if not os.path.exists('Loss'):
+                os.mkdir('Loss')
+            plt.savefig("Loss/loss.png")
+    else:
+        plt.plot(hist, 'b', label='acc')
+        plt.xlabel('Epoch')
+        plt.ylabel('Accuracy')
+        plt.legend()
+        if save:
+            if not os.path.exists('plot'):
+                os.mkdir('plot')
+            plt.savefig("plot/acc.png")
     if show:
         plt.show()
     else:
@@ -97,7 +106,7 @@ def main():
     epochs = 100
     labeled_rate = 0.2
     epoch_accuracy = 0.0
-
+    Train_acc = []
     train_hist = {'D_losses': [], 'G_losses': []}
 
     generator = Generator()
@@ -149,11 +158,12 @@ def main():
         tr_GL = np.mean(train_G_losses)
         tr_DL = np.mean(train_D_losses)
         tr_acc = np.mean(train_accuracies)
-        train_hist['D_losses'].append(np.mean(train_D_losses))
-        train_hist['G_losses'].append(np.mean(train_G_losses))
-
+        train_hist['D_losses'].append(tr_DL)
+        train_hist['G_losses'].append(tr_GL)
+        Train_acc.append(tr_acc)
         print('After epoch: ' + str(epoch + 1) + ' Generator loss: '
               + str(tr_GL) + ' Discriminator loss: ' + str(tr_DL) + ' Accuracy: ' + str(tr_acc))
+
         # 准备测试数据
         test_data = ssgan_dataset_tf2.test_X
         test_label = ssgan_dataset_tf2.test_Y
@@ -162,15 +172,17 @@ def main():
         test_accuracy, _ = accuracy(discriminator, test_data_reshaped, test_extended_label, False)
         print(test_accuracy.numpy())
         epoch_accuracy = test_accuracy.numpy()
-        if epoch_accuracy > acc:
+        if epoch_accuracy > tf.reduce_max(Train_acc):
             print('识别率最大为' + str(epoch_accuracy))
+            discriminator.save_weights('Gan_model/model_1')
 
-    discriminator.save_weights('Gan_model/model')
+    # discriminator.save_weights('Gan_model/model')
     del discriminator
 
-    return train_hist
+    return train_hist, Train_acc
 
 
 if __name__ == '__main__':
-    train_loss = main()
+    train_loss, train_acc = main()
     Draw(train_loss, show=True, save=True)
+    Draw(train_acc, show=True, save=True, is_loss=False)

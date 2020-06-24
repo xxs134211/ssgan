@@ -68,11 +68,13 @@ test_label = ssgan_dataset_tf2.test_Y
 test_data_reshaped = test_data.reshape([-1, 32, 32, 1])
 test_extended_label = prepare_extended_label(test_label)
 
-discriminator.load_weights('Gan_model/model')
+discriminator.load_weights('Gan_model/model_1')
 
 test_accuracy, prediction_value = accuracy(discriminator, test_data_reshaped, test_extended_label, False)
 
 print('准确率为：' + str(test_accuracy.numpy()))
+
+# 打印预测标签到文件
 prediction_value = prediction_value.numpy()
 pre_dataw = open("result/data.txt", 'w+')
 lenth1 = len(prediction_value)
@@ -80,7 +82,7 @@ for i in range(lenth1):
     print(prediction_value[i], file=pre_dataw)
 pre_dataw.close()
 
-
+# 打印真实标签到文件
 real_value = tf.argmax(test_label, 1)
 real_value = real_value.numpy()
 real_dataw = open("result/realdata.txt", 'w+')
