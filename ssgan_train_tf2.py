@@ -105,7 +105,6 @@ def main():
     is_training = True
     epochs = 100
     labeled_rate = 0.2
-    epoch_accuracy = 0.0
     Train_acc = []
     train_hist = {'D_losses': [], 'G_losses': []}
 
@@ -120,7 +119,6 @@ def main():
     no_of_batches = int(ssgan_dataset_tf2.train_X.shape[0] / batch_size) + 1
     for epoch in range(epochs):
         train_accuracies, train_D_losses, train_G_losses = [], [], []
-        acc = epoch_accuracy
         for i in range(no_of_batches - 1):
             # 准备训练数据
             batch_x = ssgan_dataset_tf2.train_X[i * batch_size:batch_size + i * batch_size, ]
