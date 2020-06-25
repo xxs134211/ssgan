@@ -100,12 +100,13 @@ def Draw(hist, show=False, save=False, is_loss=True):
 
 def main():
     batch_size = 64
-    learning_rate = 0.0002
+    learning_rate = 0.0005
     z_dim = 100
     is_training = True
     epochs = 100
     labeled_rate = 0.2
     Train_acc = []
+    test_acc = []
     train_hist = {'D_losses': [], 'G_losses': []}
 
     generator = Generator()
@@ -168,11 +169,15 @@ def main():
         test_data_reshaped = test_data.reshape([-1, 32, 32, 1])
         test_extended_label = prepare_extended_label(test_label)
         test_accuracy, _ = accuracy(discriminator, test_data_reshaped, test_extended_label, False)
-        print(test_accuracy.numpy())
-        epoch_accuracy = test_accuracy.numpy()
-        if epoch_accuracy > tf.reduce_max(Train_acc):
-            print('识别率最大为' + str(epoch_accuracy))
+        print('测试集：' + str(test_accuracy.numpy()))
+        epoch_accuracy = test_accuracy
+        print(np.array(test_acc))
+        print('目前准确率最大为' + str(tf.reduce_max(test_acc)))
+        print(str(epoch_accuracy.numpy()), str(tf.reduce_max(test_acc).numpy()))
+        if epoch_accuracy.numpy() > tf.reduce_max(test_acc).numpy():
+            print('*************************模型保存***************************************')
             discriminator.save_weights('Gan_model/model_1')
+        test_acc.append(test_accuracy)
 
     # discriminator.save_weights('Gan_model/model')
     del discriminator

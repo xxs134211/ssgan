@@ -68,7 +68,7 @@ test_label = ssgan_dataset_tf2.test_Y
 test_data_reshaped = test_data.reshape([-1, 32, 32, 1])
 test_extended_label = prepare_extended_label(test_label)
 
-discriminator.load_weights('Gan_model/model')
+discriminator.load_weights('Gan_model/model_1')
 
 test_accuracy, prediction_value = accuracy(discriminator, test_data_reshaped, test_extended_label, False)
 
