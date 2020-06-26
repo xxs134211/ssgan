@@ -5,6 +5,7 @@ from tensorflow import keras
 import ssgan_dataset_tf2
 from model_2.ssgan_model_2_tf2 import Generator, Discriminator
 import matplotlib.pyplot as plt
+import time
 import warnings
 
 warnings.filterwarnings("ignore")
@@ -38,8 +39,11 @@ def d_loss_fn(generator, discriminator, batch_z, batch_x, labeled_mask, extended
         logits=D_real_logits[:, 0], labels=tf.zeros_like(D_real_logits[:, 0], dtype=tf.float32)))
     D_L_FakeUnsupervised = tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(
         logits=D_fake_logits[:, 0], labels=tf.ones_like(D_fake_logits[:, 0], dtype=tf.float32)))
+    data_moments = tf.reduce_mean(D_real_mid, axis=0)
+    sample_moments = tf.reduce_mean(D_fake_mid, axis=0)
+    D_L_2 = tf.reduce_mean(tf.square(data_moments - sample_moments))
 
-    D_L = D_L_Supervised + D_L_RealUnsupervised + D_L_FakeUnsupervised
+    D_L = D_L_Supervised + D_L_RealUnsupervised + D_L_FakeUnsupervised - D_L_2
     return D_L
 
 
@@ -104,10 +108,10 @@ def Draw(hist, show=False, save=False, is_loss=True):
 
 def main():
     batch_size = 64
-    learning_rate = 0.0005
+    learning_rate = 0.0002
     z_dim = 100
     is_training = True
-    epochs = 100
+    epochs = 2
     labeled_rate = 0.2
     Train_acc = []
     test_acc = []

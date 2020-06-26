@@ -1,7 +1,9 @@
 import os
 import numpy as np
 import tensorflow as tf
+from openpyxl import load_workbook
 from tensorflow import keras
+import time
 import ssgan_dataset_tf2
 from ssgan_model_tf2 import Generator, Discriminator
 import matplotlib.pyplot as plt
@@ -71,8 +73,9 @@ def accuracy(discriminator, batch_x, extended_label, is_training):
     return acc, prediction_value
 
 
-def Draw(hist, show=False, save=False, is_loss=True):
+def Draw(hist, name, epoch, show=False, save=False, is_loss=True):
     plt.figure()
+    Time = time.strftime("%Y-%m-%d %H-%M-%S", time.localtime())
     if is_loss:
         plt.plot(hist['G_losses'], 'b', label='generator')
         plt.plot(hist['D_losses'], 'r', label='discriminator')
@@ -82,7 +85,7 @@ def Draw(hist, show=False, save=False, is_loss=True):
         if save:
             if not os.path.exists('Loss'):
                 os.mkdir('Loss')
-            plt.savefig("Loss/loss.png")
+            plt.savefig("Loss/loss_lr[{}]epoch[{}]time[{}].png".format(name, epoch, Time))
     else:
         plt.plot(hist, 'b', label='acc')
         plt.xlabel('Epoch')
@@ -91,19 +94,32 @@ def Draw(hist, show=False, save=False, is_loss=True):
         if save:
             if not os.path.exists('plot'):
                 os.mkdir('plot')
-            plt.savefig("plot/acc.png")
+            plt.savefig("plot/acc_lr[{}]epoch[{}]time[{}].png".format(name, epoch, Time))
     if show:
         plt.show()
     else:
         plt.close()
 
 
-def main():
+# 操作xcel表格
+def write_excel(path, learn_rate, model_number, Accuracy):
+    wb = load_workbook(path)
+    if model_number == 1:
+        ws = wb["model_1"]
+    else:
+        ws = wb["model_2"]
+    ws['A1'] = 'lr=' + format(learn_rate)
+    for i in range(len(Accuracy)):
+        ws.append([Accuracy[i]])
+    wb.save(path)
+
+
+def main(learning_rate, epochs):
     batch_size = 64
-    learning_rate = 0.0005
+    # learning_rate = 0.0002
     z_dim = 100
     is_training = True
-    epochs = 100
+    # epochs = 100
     labeled_rate = 0.2
     Train_acc = []
     test_acc = []
@@ -179,13 +195,17 @@ def main():
             discriminator.save_weights('Gan_model/model_1')
         test_acc.append(test_accuracy)
 
-    # discriminator.save_weights('Gan_model/model')
     del discriminator
 
     return train_hist, Train_acc
 
 
 if __name__ == '__main__':
-    train_loss, train_acc = main()
-    Draw(train_loss, show=True, save=True)
-    Draw(train_acc, show=True, save=True, is_loss=False)
+    Learning_rate = 0.0002
+    Epochs = 100
+    train_loss, train_acc = main(Learning_rate, Epochs)
+    Draw(train_loss, Learning_rate, Epochs, show=True, save=True)
+    Draw(train_acc, Learning_rate, Epochs, show=True, save=True, is_loss=False)
+
+    Path = 'D:/python/ssgan_tf2.0/accuracy.xlsx'
+    write_excel(Path, Learning_rate, 1, train_acc)
