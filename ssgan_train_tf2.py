@@ -101,16 +101,16 @@ def Draw(hist, name, epoch, show=False, save=False, is_loss=True):
         plt.close()
 
 
-# 操作xcel表格
+# 操作Excel表格
 def write_excel(path, learn_rate, model_number, Accuracy):
     wb = load_workbook(path)
     if model_number == 1:
         ws = wb["model_1"]
     else:
         ws = wb["model_2"]
-    ws['A1'] = 'lr=' + format(learn_rate)
+    ws['D1'] = 'lr=' + format(learn_rate)
     for i in range(len(Accuracy)):
-        ws.append([Accuracy[i]])
+        ws.cell(row=i+2, column=4).value = Accuracy[i]
     wb.save(path)
 
 
@@ -192,7 +192,8 @@ def main(learning_rate, epochs):
         print(str(epoch_accuracy.numpy()), str(tf.reduce_max(test_acc).numpy()))
         if epoch_accuracy.numpy() > tf.reduce_max(test_acc).numpy():
             print('*************************模型保存***************************************')
-            discriminator.save_weights('Gan_model/model_1')
+            Time = time.strftime("%Y-%m-%d %H-%M-%S", time.localtime())
+            discriminator.save_weights('Gan_model/model_time[{}]'.format(Time))
         test_acc.append(test_accuracy)
 
     del discriminator
