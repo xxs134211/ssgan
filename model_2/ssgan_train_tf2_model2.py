@@ -1,4 +1,6 @@
 import os
+import datetime
+
 import numpy as np
 import tensorflow as tf
 from openpyxl import load_workbook
@@ -44,7 +46,7 @@ def d_loss_fn(generator, discriminator, batch_z, batch_x, labeled_mask, extended
     sample_moments = tf.reduce_mean(D_fake_mid, axis=0)
     D_L_2 = tf.reduce_mean(tf.square(data_moments - sample_moments))
 
-    D_L = D_L_Supervised + D_L_RealUnsupervised + D_L_FakeUnsupervised - D_L_2
+    D_L = D_L_Supervised + D_L_RealUnsupervised + D_L_FakeUnsupervised - 0 * D_L_2
     return D_L
 
 
@@ -66,7 +68,7 @@ def g_loss_fn(generator, discriminator, batch_z, batch_x, is_training):
     sample_moments_mid = tf.reduce_mean(D_fake_mid, axis=0)
     G_L_3 = tf.reduce_mean(tf.square(data_moments_mid - sample_moments_mid))
 
-    G_L = G_L_1 + G_L_2 + G_L_3
+    G_L = G_L_1 + G_L_2 + 0.5 * G_L_3
 
     return G_L
 
@@ -111,13 +113,14 @@ def Draw(hist, name, epoch, show=False, save=False, is_loss=True):
 # 操作Excel表格
 def write_excel(path, learn_rate, model_number, Accuracy):
     wb = load_workbook(path)
+    Time = time.strftime("%Y-%m-%d %H-%M-%S", time.localtime())
     if model_number == 1:
         ws = wb["model_1"]
     else:
         ws = wb["model_2"]
-    ws['A1'] = 'lr=' + format(learn_rate)
+    ws['V1'] = 'lr=' + format(learn_rate) + Time
     for i in range(len(Accuracy)):
-        ws.cell(row=i + 2, column=1).value = Accuracy[i]
+        ws.cell(row=i + 2, column=22).value = Accuracy[i]
     wb.save(path)
 
 
@@ -131,6 +134,7 @@ def main(learning_rate, epochs):
     Train_acc = []
     test_acc = []
     train_hist = {'D_losses': [], 'G_losses': []}
+    file = ['', '', '']  # 模型文件名称，删除之前保存的文件名称
 
     generator = Generator()
     generator.build(input_shape=(1, z_dim))
@@ -139,6 +143,13 @@ def main(learning_rate, epochs):
 
     g_optimizer = keras.optimizers.Adam(learning_rate=learning_rate, beta_1=0.5)
     d_optimizer = keras.optimizers.Adam(learning_rate=learning_rate, beta_1=0.5)
+    discriminator.summary()
+    Time = datetime.datetime.now().strftime("%Y-%m-%d-%H-%M-%S")
+    path = 'D:/python/ssgan_tf2.0/model_2/log'
+    log_dir = os.path.join(path, Time)
+    if not os.path.exists(log_dir):
+        os.mkdir(log_dir)
+    writer = tf.summary.create_file_writer(log_dir)
 
     no_of_batches = int(ssgan_dataset_tf2.train_X.shape[0] / batch_size) + 1
     for epoch in range(epochs):
@@ -186,6 +197,11 @@ def main(learning_rate, epochs):
         print('After epoch: ' + str(epoch + 1) + ' Generator loss: '
               + str(tr_GL) + ' Discriminator loss: ' + str(tr_DL) + ' Accuracy: ' + str(tr_acc))
 
+        with writer.as_default():
+            tf.summary.scalar("train/tr_DL", tr_DL, epoch)
+            tf.summary.scalar("train/tr_GL", tr_GL, epoch)
+            tf.summary.scalar("train/tr_acc", tr_acc, epoch)
+
         # 准备测试数据
         test_data = ssgan_dataset_tf2.test_X
         test_label = ssgan_dataset_tf2.test_Y
@@ -193,28 +209,51 @@ def main(learning_rate, epochs):
         test_extended_label = prepare_extended_label(test_label)
         test_accuracy, _ = accuracy(discriminator, test_data_reshaped, test_extended_label, False)
         print('测试集：' + str(test_accuracy.numpy()))
-        epoch_accuracy = test_accuracy
-        print(np.array(test_acc))
-        print('目前准确率最大为' + str(tf.reduce_max(test_acc)))
-        print(str(epoch_accuracy.numpy()), str(tf.reduce_max(test_acc).numpy()))
-        if epoch_accuracy.numpy() > tf.reduce_max(test_acc).numpy():
-            print('*************************模型保存***************************************')
-            Time = time.strftime("%Y-%m-%d %H-%M-%S", time.localtime())
-            discriminator.save_weights('Gan_model/model_time[{}]'.format(Time))
-        test_acc.append(test_accuracy)
+        epoch_accuracy = tr_acc
+        # with writer.as_default():
+        #     tf.summary.scalar("test/test_accuracy", epoch_accuracy, epoch)
 
-    # discriminator.save_weights('Gan_model/model')
+        print(np.array(Train_acc))
+        print('目前准确率最大为' + str(tf.reduce_max(Train_acc).numpy()))
+        print(str(epoch_accuracy), str(tf.reduce_max(Train_acc).numpy()))
+        print(tr_acc.tolist())
+        x = tr_acc - tf.reduce_max(Train_acc)
+        print(x.numpy())
+        if x >= 0:
+            Time = time.strftime("%Y-%m-%d %H-%M-%S", time.localtime())  # 本次循环开始时间，放到文件命名
+            for i in file:  # 删除上一个模型文件，保存新的模型
+                if os.path.exists(i):
+                    os.remove(i)
+                else:
+                    print('no such file:%s' % i)
+            print('*************************模型保存***************************************')
+            discriminator.save_weights('Gan_model/model_time[{}]'.format(Time))
+            file = ['D:/python/ssgan_tf2.0/model_2/Gan_model/model_time[{}].index'.format(Time),
+                    'D:/python/ssgan_tf2.0/model_2/Gan_model/model_time[{}].data-00000-of-00002'.format(Time),
+                    'D:/python/ssgan_tf2.0/model_2/Gan_model/model_time[{}].data-00001-of-00002'.format(Time)]
+        # test_acc.append(test_accuracy)
     del discriminator
 
     return train_hist, Train_acc
 
 
+def learning_rate_schedule(process, init_learning_rate=0.01, alpha=10.0, beta=0.75):
+    """
+    这个学习率的变换函数
+    :param process: 训练进程比率，值在0-1之间
+    :param init_learning_rate: 初始学习率，默认为0.01
+    :param alpha: 参数alpha，默认为10
+    :param beta: 参数beta，默认为0.75
+    """
+    return init_learning_rate / (1.0 + alpha * process) ** beta
+
+
 if __name__ == '__main__':
-    Learning_rate = 0.0002
+    Learning_rate = 0.0005
     Epochs = 100
     train_loss, train_acc = main(Learning_rate, Epochs)
     Draw(train_loss, Learning_rate, Epochs, show=True, save=True)
     Draw(train_acc, Learning_rate, Epochs, show=True, save=True, is_loss=False)
 
-    Path = 'D:/python/ssgan_tf2.0/accuracy.xlsx'
-    write_excel(Path, Learning_rate, 1, train_acc)
+    # Path = 'D:/python/ssgan_tf2.0/accuracy.xlsx'
+    # write_excel(Path, Learning_rate, 2, train_acc)

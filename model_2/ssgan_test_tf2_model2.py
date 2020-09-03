@@ -3,7 +3,10 @@ from model_2.ssgan_train_tf2_model2 import prepare_extended_label, accuracy
 import ssgan_dataset_tf2
 from tensorflow.keras import layers, Model
 import os
-os.environ['CUDA_VISIBLE_DEVICES'] = '/gpu:0'
+# os.environ['CUDA_VISIBLE_DEVICES'] = '/gpu:0'
+# CUDA_VISIBLE_DEVICES = 0
+devices = tf.config.experimental.list_physical_devices('GPU')
+tf.config.experimental.set_memory_growth(devices[0], True)
 
 
 class Discriminator(Model):
@@ -69,7 +72,7 @@ test_label = ssgan_dataset_tf2.test_Y
 test_data_reshaped = test_data.reshape([-1, 32, 32, 1])
 test_extended_label = prepare_extended_label(test_label)
 
-discriminator.load_weights('D:/python/ssgan_tf2.0/model_2/Gan_model/model_1')
+discriminator.load_weights('D:/python/ssgan_tf2.0/model_2/Gan_model/model_time[2020-08-13 02-19-24]')
 
 test_accuracy, prediction_value = accuracy(discriminator, test_data_reshaped, test_extended_label, False)
 

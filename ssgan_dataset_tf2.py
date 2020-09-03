@@ -3,7 +3,6 @@ import numpy as np
 import os
 from sklearn import preprocessing  # 0-1编码
 from sklearn.model_selection import StratifiedShuffleSplit  # 随机划分，保证每一类比例相同
-import tensorflow as tf
 import warnings
 
 warnings.filterwarnings("ignore")
@@ -38,9 +37,14 @@ def DataSet(d_path, length=1024, number=1000, normal=True, rate=None, enc=True, 
             file = loadmat(file_path)  # 加载.mat文件中所有的结构体
             file_keys = file.keys()
             for key in file_keys:  # 获取所有文件中结构体中含有字符为DE的数据，并将数据写入字典中
-                if 'N09_M07' in key:
+                if 'M07' in key:
                     files[i] = file[key]
                     get_data[i] = files[i][0, 0]['Y'][0, 6][2].ravel()
+
+                if 'data_channel_2' in key:
+                    files[i] = file[key]
+                    get_data[i] = files[i].ravel()
+
         return get_data
 
     def slice_enc(slicedata, slice_rate=rate[1] + rate[2]):
@@ -172,22 +176,27 @@ def DataSet(d_path, length=1024, number=1000, normal=True, rate=None, enc=True, 
     return Train_X, Train_Y, Valid_X, Valid_Y, Test_X, Test_Y
 
 
-path_train = 'D:/python/bearing_data/train'
+path_train = 'D:/python/bearing_data/train1'
+# path_train = 'D:/python/bearing_data/北交辛格数据/train_data'
+# path_train = 'D:/python/bearing_data/北交赵雪军数据/test'
 train_X1, train_Y1, valid_X1, valid_Y1, test_X1, test_Y1 = DataSet(d_path=path_train,
-                                                                   length=1024,
-                                                                   number=4000,
+                                                                   length=4096,
+                                                                   number=1000,
                                                                    normal=False,
                                                                    rate=[0.7, 0.2, 0.1],
                                                                    enc=True,
                                                                    enc_step=50)
 # print(train_X1, train_Y1)
 # print(test_X1.shape, test_Y1.shape)
-path_test = 'D:/python/bearing_data/test'
+# path_test = 'D:/python/DANN/dataset/data_train'
+path_test = 'D:/python/bearing_data/test1'
+# path_test = 'D:/python/bearing_data/北交辛格数据/test_data'
+# path_test = 'D:/python/bearing_data/北交赵雪军数据/ball'
 train_X2, train_Y2, valid_X2, valid_Y2, test_X2, test_Y2 = DataSet(d_path=path_test,
-                                                                   length=1024,
-                                                                   number=400,
+                                                                   length=4096,
+                                                                   number=600,
                                                                    normal=False,
-                                                                   rate=[0.3, 0.1, 0.6],
+                                                                   rate=[0.1, 0.1, 0.8],
                                                                    enc=False,
                                                                    enc_step=50)
 

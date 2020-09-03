@@ -22,7 +22,7 @@ class Generator(Model):  # 生成器
         self.dropout3 = layers.Dropout(dropout_rate)
 
         # Layer 4    64，核大小为4，步长为2，使用padding
-        self.conv4 = layers.Conv2DTranspose(1, 4, 2, 'same', use_bias=False)
+        self.conv4 = layers.Conv2DTranspose(1, 4, 1, 'same', use_bias=False)
 
     def call(self, inputs, training=None, reuse=False):
         x = inputs  # [z, 100]
@@ -37,7 +37,7 @@ class Generator(Model):  # 生成器
         x = self.dropout3(tf.nn.relu(self.bn3(self.conv3(x), training=training)))
         # 转置卷积-BN-激活函数:(b, 64, 64, 1)
         x = self.conv4(x)
-        x = tf.image.resize(x, [32, 32])  # ？*32*32*1
+        x = tf.image.resize(x, [64, 64])  # ？*32*32*1
         x = tf.tanh(x)  # 输出x 范围-1~1,与预处理一致
 
         return x
@@ -72,26 +72,26 @@ class Discriminator(Model):
         # 特征打平层
         self.flatten = layers.Flatten()
         # 2 分类全连接层
-        self.fc = layers.Dense(4)
+        self.fc = layers.Dense(5)
         self.out_D = layers.Softmax()
 
     def call(self, inputs, training=None, reuse=False):
         # 卷积-BN-激活函数:(4, 31, 31, 64)
-        x = self.dropout1(tf.nn.leaky_relu(self.bn1(self.conv1(inputs), training=training)))
+        x1 = self.dropout1(tf.nn.leaky_relu(self.bn1(self.conv1(inputs), training=training)))
         # 卷积-BN-激活函数:(4, 14, 14, 128)
-        x = self.dropout2(tf.nn.leaky_relu(self.bn2(self.conv2(x), training=training)))
+        x2 = self.dropout2(tf.nn.leaky_relu(self.bn2(self.conv2(x1), training=training)))
         # 卷积-BN-激活函数:(4, 6, 6, 256)
-        x = self.dropout3(tf.nn.leaky_relu(self.bn3(self.conv3(x), training=training)))
+        x3 = self.dropout3(tf.nn.leaky_relu(self.bn3(self.conv3(x2), training=training)))
         # 卷积-BN-激活函数:(4, 4, 4, 512)
-        x = self.dropout4(tf.nn.leaky_relu(self.bn4(self.conv4(x), training=training)))
+        x4 = self.dropout4(tf.nn.leaky_relu(self.bn4(self.conv4(x3), training=training)))
         # 卷积-BN-激活函数:(4, 2, 2, 1024)
-        x = tf.nn.leaky_relu(self.bn5(self.conv5(x), training=training))
+        x5 = tf.nn.leaky_relu(self.bn5(self.conv5(x4), training=training))
         # 卷积-BN-激活函数:(4, 1024)
-        x = self.pool(x)
+        x = self.pool(x5)
         # 打平
         x_flatten = self.flatten(x)
         # 输出，[b, 1024] => [b, 4]
         x = self.fc(x_flatten)
         logits = self.out_D(x)
 
-        return x_flatten, x, logits
+        return x_flatten, x, logits, x3
