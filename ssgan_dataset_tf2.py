@@ -176,12 +176,13 @@ def DataSet(d_path, length=1024, number=1000, normal=True, rate=None, enc=True, 
     return Train_X, Train_Y, Valid_X, Valid_Y, Test_X, Test_Y
 
 
-path_train = 'D:/python/bearing_data/train1'
+path_train = 'D:/python/bearing_data/train_3'
+# path_train = 'D:/python/DANN/dataset/data_train'
 # path_train = 'D:/python/bearing_data/北交辛格数据/train_data'
 # path_train = 'D:/python/bearing_data/北交赵雪军数据/test'
 train_X1, train_Y1, valid_X1, valid_Y1, test_X1, test_Y1 = DataSet(d_path=path_train,
-                                                                   length=4096,
-                                                                   number=1000,
+                                                                   length=1024,
+                                                                   number=4000,
                                                                    normal=False,
                                                                    rate=[0.7, 0.2, 0.1],
                                                                    enc=True,
@@ -189,11 +190,11 @@ train_X1, train_Y1, valid_X1, valid_Y1, test_X1, test_Y1 = DataSet(d_path=path_t
 # print(train_X1, train_Y1)
 # print(test_X1.shape, test_Y1.shape)
 # path_test = 'D:/python/DANN/dataset/data_train'
-path_test = 'D:/python/bearing_data/test1'
+path_test = 'D:/python/bearing_data/train_3'
 # path_test = 'D:/python/bearing_data/北交辛格数据/test_data'
 # path_test = 'D:/python/bearing_data/北交赵雪军数据/ball'
 train_X2, train_Y2, valid_X2, valid_Y2, test_X2, test_Y2 = DataSet(d_path=path_test,
-                                                                   length=4096,
+                                                                   length=1024,
                                                                    number=600,
                                                                    normal=False,
                                                                    rate=[0.1, 0.1, 0.8],

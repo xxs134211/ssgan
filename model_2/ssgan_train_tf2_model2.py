@@ -12,6 +12,9 @@ import time
 import warnings
 
 warnings.filterwarnings("ignore")
+# os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
+devices = tf.config.experimental.list_physical_devices('GPU')
+tf.config.experimental.set_memory_growth(devices[0], True)
 
 
 # 准备与真实数据的标签相乘的二进制标签掩码
@@ -46,7 +49,7 @@ def d_loss_fn(generator, discriminator, batch_z, batch_x, labeled_mask, extended
     sample_moments = tf.reduce_mean(D_fake_mid, axis=0)
     D_L_2 = tf.reduce_mean(tf.square(data_moments - sample_moments))
 
-    D_L = D_L_Supervised + D_L_RealUnsupervised + D_L_FakeUnsupervised - 0 * D_L_2
+    D_L = D_L_Supervised + D_L_RealUnsupervised + D_L_FakeUnsupervised
     return D_L
 
 
@@ -94,7 +97,7 @@ def Draw(hist, name, epoch, show=False, save=False, is_loss=True):
         if save:
             if not os.path.exists('Loss'):
                 os.mkdir('Loss')
-            plt.savefig("Loss/loss_lr[{}]epoch[{}]time[{}].png".format(name, epoch, Time))
+            plt.savefig("Loss/GAN_loss_lr[{}]epoch[{}]time[{}].png".format(name, epoch, Time))
     else:
         plt.plot(hist, 'b', label='acc')
         plt.xlabel('Epoch')
@@ -103,7 +106,7 @@ def Draw(hist, name, epoch, show=False, save=False, is_loss=True):
         if save:
             if not os.path.exists('plot'):
                 os.mkdir('plot')
-            plt.savefig("plot/acc_lr[{}]epoch[{}]time[{}].png".format(name, epoch, Time))
+            plt.savefig("plot/GAN_acc_lr[{}]epoch[{}]time[{}].png".format(name, epoch, Time))
     if show:
         plt.show()
     else:
@@ -145,7 +148,7 @@ def main(learning_rate, epochs):
     d_optimizer = keras.optimizers.Adam(learning_rate=learning_rate, beta_1=0.5)
     discriminator.summary()
     Time = datetime.datetime.now().strftime("%Y-%m-%d-%H-%M-%S")
-    path = 'D:/python/ssgan_tf2.0/model_2/log'
+    path = 'D:/python/ssgan_tf2.0/log_dir'
     log_dir = os.path.join(path, Time)
     if not os.path.exists(log_dir):
         os.mkdir(log_dir)
@@ -182,7 +185,6 @@ def main(learning_rate, epochs):
 
             train_accuracy, _ = accuracy(discriminator, valid_data_reshaped, valid_extended_label, None)
             train_accuracies.append(train_accuracy)
-            # print(train_accuracies)
             print('Epoch [{}]/[{}]'.format(epoch, epochs), 'Batch evaluated [{}]/[{}]'.format(str(i + 1),
                                                                                               no_of_batches - 1))
 
@@ -209,16 +211,16 @@ def main(learning_rate, epochs):
         test_extended_label = prepare_extended_label(test_label)
         test_accuracy, _ = accuracy(discriminator, test_data_reshaped, test_extended_label, False)
         print('测试集：' + str(test_accuracy.numpy()))
-        epoch_accuracy = tr_acc
-        # with writer.as_default():
-        #     tf.summary.scalar("test/test_accuracy", epoch_accuracy, epoch)
+        epoch_accuracy = test_accuracy
+        with writer.as_default():
+            tf.summary.scalar("test/test_accuracy", epoch_accuracy.numpy(), epoch)
 
-        print(np.array(Train_acc))
-        print('目前准确率最大为' + str(tf.reduce_max(Train_acc).numpy()))
-        print(str(epoch_accuracy), str(tf.reduce_max(Train_acc).numpy()))
-        print(tr_acc.tolist())
+        print(np.array(test_acc))
+        print('目前准确率最大为' + str(tf.reduce_max(test_acc).numpy()))
+        print(str(epoch_accuracy.numpy()), str(tf.reduce_max(test_acc).numpy()))
+        # print(tr_acc.tolist())
         x = tr_acc - tf.reduce_max(Train_acc)
-        print(x.numpy())
+        # print(x.numpy())
         if x >= 0:
             Time = time.strftime("%Y-%m-%d %H-%M-%S", time.localtime())  # 本次循环开始时间，放到文件命名
             for i in file:  # 删除上一个模型文件，保存新的模型
@@ -228,24 +230,13 @@ def main(learning_rate, epochs):
                     print('no such file:%s' % i)
             print('*************************模型保存***************************************')
             discriminator.save_weights('Gan_model/model_time[{}]'.format(Time))
-            file = ['D:/python/ssgan_tf2.0/model_2/Gan_model/model_time[{}].index'.format(Time),
-                    'D:/python/ssgan_tf2.0/model_2/Gan_model/model_time[{}].data-00000-of-00002'.format(Time),
-                    'D:/python/ssgan_tf2.0/model_2/Gan_model/model_time[{}].data-00001-of-00002'.format(Time)]
-        # test_acc.append(test_accuracy)
+            file = ['D:/python/ssgan_tf2.0/Gan_model/model_time[{}].index'.format(Time),
+                    'D:/python/ssgan_tf2.0/Gan_model/model_time[{}].data-00000-of-00002'.format(Time),
+                    'D:/python/ssgan_tf2.0/Gan_model/model_time[{}].data-00001-of-00002'.format(Time)]
+        test_acc.append(test_accuracy)
     del discriminator
 
     return train_hist, Train_acc
-
-
-def learning_rate_schedule(process, init_learning_rate=0.01, alpha=10.0, beta=0.75):
-    """
-    这个学习率的变换函数
-    :param process: 训练进程比率，值在0-1之间
-    :param init_learning_rate: 初始学习率，默认为0.01
-    :param alpha: 参数alpha，默认为10
-    :param beta: 参数beta，默认为0.75
-    """
-    return init_learning_rate / (1.0 + alpha * process) ** beta
 
 
 if __name__ == '__main__':

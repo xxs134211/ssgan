@@ -37,7 +37,7 @@ class Generator(Model):  # 生成器
         x = self.dropout3(tf.nn.relu(self.bn3(self.conv3(x), training=training)))
         # 转置卷积-BN-激活函数:(b, 64, 64, 1)
         x = self.conv4(x)
-        x = tf.image.resize(x, [64, 64])  # ？*32*32*1
+        x = tf.image.resize(x, [32, 32])  # ？*32*32*1
         x = tf.tanh(x)  # 输出x 范围-1~1,与预处理一致
 
         return x
@@ -72,7 +72,7 @@ class Discriminator(Model):
         # 特征打平层
         self.flatten = layers.Flatten()
         # 2 分类全连接层
-        self.fc = layers.Dense(5)
+        self.fc = layers.Dense(4)
         self.out_D = layers.Softmax()
 
     def call(self, inputs, training=None, reuse=False):

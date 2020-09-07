@@ -54,3 +54,4 @@ class CNN(Model):
         logits = self.out_D(x)
 
         return x_flatten, x, logits
+

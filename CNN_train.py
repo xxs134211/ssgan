@@ -73,7 +73,7 @@ def main(learning_rate, epochs):
     file = ['', '', '']  # 模型文件名称，删除之前保存的文件名称
 
     CNN_model = CNN()
-    CNN_model.build(input_shape=(None, 64, 64, 1))
+    CNN_model.build(input_shape=(None, 32, 32, 1))
     optimizer = keras.optimizers.Adam(learning_rate=learning_rate, beta_1=0.5)
     CNN_model.summary()
     Time = datetime.datetime.now().strftime("%Y-%m-%d-%H-%M-%S")
@@ -89,13 +89,13 @@ def main(learning_rate, epochs):
             # 准备训练数据
             batch_x = train_X[i * batch_size:batch_size + i * batch_size, ]
             batch_label = train_Y[i * batch_size:batch_size + i * batch_size, ]
-            batch_reshaped = batch_x.reshape([-1, 64, 64, 1])
+            batch_reshaped = batch_x.reshape([-1, 32, 32, 1])
             extended_label = prepare_extended_label(batch_label)
 
             # 准备验证数据
             valid_data = valid_X
             valid_label = valid_Y
-            valid_data_reshaped = valid_data.reshape([-1, 64, 64, 1])
+            valid_data_reshaped = valid_data.reshape([-1, 32, 32, 1])
             valid_extended_label = prepare_extended_label(valid_label)
 
             # 判别器前向计算
@@ -122,7 +122,7 @@ def main(learning_rate, epochs):
 
         test_data = test_X
         test_label = test_Y
-        test_data_reshaped = test_data.reshape([-1, 64, 64, 1])
+        test_data_reshaped = test_data.reshape([-1, 32, 32, 1])
         test_extended_label = prepare_extended_label(test_label)
         test_features, test_logits, test_prob = CNN_model(test_data_reshaped, False)
         test_accuracy, _ = accuracy(CNN_model, test_data_reshaped, test_extended_label, False)

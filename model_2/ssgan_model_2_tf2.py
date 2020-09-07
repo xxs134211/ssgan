@@ -31,11 +31,11 @@ class Generator(Model):  # 生成器
         x = tf.reshape(x, (x.shape[0], 1, 1, 100))
         x = tf.nn.relu(x)  # 激活函数
         # 转置卷积-BN-激活函数-dropout:(b, 4, 4, 512)
-        x = self.dropout1(tf.nn.relu(self.bn1(self.conv1(x), training=training)))
+        x = self.dropout1(tf.nn.leaky_relu(self.bn1(self.conv1(x), training=training)))
         # 转置卷积-BN-激活函数:(b, 16, 16, 256)
-        x = self.dropout2(tf.nn.relu(self.bn2(self.conv2(x), training=training)))
+        x = self.dropout2(tf.nn.leaky_relu(self.bn2(self.conv2(x), training=training)))
         # 转置卷积-BN-激活函数:(b, 32, 32, 128)
-        x = self.dropout3(tf.nn.relu(self.bn3(self.conv3(x), training=training)))
+        x = self.dropout3(tf.nn.leaky_relu(self.bn3(self.conv3(x), training=training)))
         # 转置卷积-BN-激活函数:(b, 64, 64, 1)
         x = self.conv4(x)
         x = tf.image.resize(x, [32, 32])  # ？*32*32*1
@@ -95,4 +95,4 @@ class Discriminator(Model):
         x = self.fc(x_flatten)
         logits = self.out_D(x)
 
-        return x_flatten, x, logits, x3
+        return x_flatten, x, logits, x4
